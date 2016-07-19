@@ -30,7 +30,7 @@ from distutils.core import setup
 setup(
     name='dockerhub',
     version='0.1',
-    packages=[''],
+    py_modules=['dockerhub'],
     url='',
     license='BSD',
     author='Jakub Klama',
