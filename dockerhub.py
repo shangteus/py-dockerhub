@@ -55,7 +55,11 @@ class DockerHub(object):
 
             return
 
-    def get_repository(self, name, user='library'):
+    def get_repository(self, name):
+        user = 'library'
+        if '/' in name:
+            user, name = name.split('/', 1)
+
         resp = requests.get(self.api_url('repositories/{0}/{1}'.format(user, name)))
         code = resp.status_code
         if code == 200:
