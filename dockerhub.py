@@ -60,7 +60,7 @@ class DockerHub(object):
         if '/' in name:
             user, name = name.split('/', 1)
 
-        resp = requests.get(self.api_url('repositories/{0}/{1}/'.format(user, name)))
+        resp = requests.get(self.api_url('repositories/{0}/{1}'.format(user, name)))
         code = resp.status_code
         if code == 200:
             return resp.json()
@@ -74,7 +74,7 @@ class DockerHub(object):
         if '/' in name:
             user, name = name.split('/', 1)
 
-        resp = requests.get(self.api_url('repositories/{0}/{1}/dockerfile/'.format(user, name)))
+        resp = requests.get(self.api_url('repositories/{0}/{1}/dockerfile'.format(user, name)))
         code = resp.status_code
         if code == 200:
             j = resp.json()
@@ -85,5 +85,5 @@ class DockerHub(object):
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
     def get_user(self, name):
-        resp = requests.get(self.api_url('users/{0}/'.format(name)))
+        resp = requests.get(self.api_url('users/{0}'.format(name)))
         return resp.json()
