@@ -69,6 +69,18 @@ class DockerHub(object):
         else:
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
+    def get_repositories(self, user):
+        resp = requests.get(self.api_url('repositories/{0}'.format(user)))
+        code = resp.status_code
+
+        if code == 200:
+            j = resp.json()
+            return j['results']
+        elif code == 404:
+            raise ValueError('{0} repository does not exist'.format(user))
+        else:
+            raise ConnectionError('{0} download failed: {1}'.format(user, code))
+
     def get_dockerfile(self, name):
         user = 'library'
         if '/' in name:
