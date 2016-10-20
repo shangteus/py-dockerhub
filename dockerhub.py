@@ -85,16 +85,31 @@ class DockerHub(object):
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
     def get_repositories(self, user):
+        next = None
         resp = requests.get(self.api_url('repositories/{0}'.format(user)))
-        code = resp.status_code
 
-        if code == 200:
-            j = resp.json()
-            return j['results']
-        elif code == 404:
-            raise ValueError('{0} repository does not exist'.format(user))
-        else:
-            raise ConnectionError('{0} download failed: {1}'.format(user, code))
+        while True:
+            if next:
+                resp = requests.get(next)
+
+            code = resp.status_code
+
+            resp = resp.json()
+
+            if code == 200:
+                for i in resp['results']:
+                    yield i
+
+                if resp['next']:
+                    next = resp['next']
+                    continue
+
+                return
+
+            elif code == 404:
+                raise ValueError('{0} repository does not exist'.format(user))
+            else:
+                raise ConnectionError('{0} download failed: {1}'.format(user, code))
 
     def get_dockerfile(self, name):
         user = 'library'
