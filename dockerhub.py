@@ -84,7 +84,7 @@ class DockerHub(object):
         return self._get_item(name, 'tags/{0}'.format(tag))
 
     def get_dockerfile(self, name):
-        return self._get_item(name, 'dockerfile')
+        return self._get_item(name, 'dockerfile')['contents']
 
     def get_user(self, name):
         resp = requests.get(self.api_url('users/{0}'.format(name)))
