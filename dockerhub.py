@@ -25,6 +25,7 @@
 #
 #####################################################################
 
+import os
 import requests
 
 
@@ -33,12 +34,24 @@ class DockerHub(object):
         self.version = version
         self.url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
 
-    def api_url(self, path):
-        return '{0}/{1}/'.format(self.url, path)
+    def _get_item(self, name, subitem=''):
+        user = 'library'
+        if '/' in name:
+            user, name = name.split('/', 1)
 
-    def search(self, term):
+        resp = requests.get(os.path.join(self.api_url('repositories/{0}/{1}'.format(user, name)), subitem))
+        code = resp.status_code
+        if code == 200:
+            j = resp.json()
+            return j
+        elif code == 404:
+            raise ValueError('{0} repository does not exist'.format(name))
+        else:
+            raise ConnectionError('{0} download failed: {1}'.format(name, code))
+
+    def _iter_item(self, *args):
         next = None
-        resp = requests.get(self.api_url('search/repositories'), {'query': term})
+        resp = requests.get(*args)
 
         while True:
             if next:
@@ -55,76 +68,23 @@ class DockerHub(object):
 
             return
 
-    def get_repository(self, name):
-        user = 'library'
-        if '/' in name:
-            user, name = name.split('/', 1)
+    def api_url(self, path):
+        return '{0}/{1}/'.format(self.url, path)
 
-        resp = requests.get(self.api_url('repositories/{0}/{1}'.format(user, name)))
-        code = resp.status_code
-        if code == 200:
-            return resp.json()
-        elif code == 404:
-            raise ValueError('{0} repository does not exist'.format(name))
-        else:
-            raise ConnectionError('{0} download failed: {1}'.format(name, code))
-
-    def get_tag(self, name, tag):
-        user = 'library'
-        if '/' in name:
-            user, name = name.split('/', 1)
-
-        resp = requests.get(self.api_url('repositories/{0}/{1}/tags/{2}'.format(user, name, tag)))
-        code = resp.status_code
-        if code == 200:
-            j = resp.json()
-            return j
-        elif code == 404:
-            raise ValueError('{0} repository does not exist'.format(name))
-        else:
-            raise ConnectionError('{0} download failed: {1}'.format(name, code))
+    def search(self, term):
+        return self._iter_item(self.api_url('search/repositories'), {'query': term})
 
     def get_repositories(self, user):
-        next = None
-        resp = requests.get(self.api_url('repositories/{0}'.format(user)))
+        return self._iter_item(self.api_url('repositories/{0}'.format(user)))
 
-        while True:
-            if next:
-                resp = requests.get(next)
+    def get_repository(self, name):
+        return self._get_item(name)
 
-            code = resp.status_code
-
-            resp = resp.json()
-
-            if code == 200:
-                for i in resp['results']:
-                    yield i
-
-                if resp['next']:
-                    next = resp['next']
-                    continue
-
-                return
-
-            elif code == 404:
-                raise ValueError('{0} repository does not exist'.format(user))
-            else:
-                raise ConnectionError('{0} download failed: {1}'.format(user, code))
+    def get_tag(self, name, tag):
+        return self._get_item(name, 'tags/{0}'.format(tag))
 
     def get_dockerfile(self, name):
-        user = 'library'
-        if '/' in name:
-            user, name = name.split('/', 1)
-
-        resp = requests.get(self.api_url('repositories/{0}/{1}/dockerfile'.format(user, name)))
-        code = resp.status_code
-        if code == 200:
-            j = resp.json()
-            return j['contents']
-        elif code == 404:
-            raise ValueError('{0} repository does not exist'.format(name))
-        else:
-            raise ConnectionError('{0} download failed: {1}'.format(name, code))
+        return self._get_item(name, 'dockerfile')
 
     def get_user(self, name):
         resp = requests.get(self.api_url('users/{0}'.format(name)))
