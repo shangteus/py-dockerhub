@@ -39,7 +39,7 @@ class DockerHub(object):
             resp = requests.get(*args, timeout=(5, 15))
         except requests.exceptions.Timeout as e:
             raise TimeoutError('Connection Timeout. Download failed: {0}'.format(e))
-        except requests.exceptions.RequestsException as e:
+        except requests.exceptions.RequestException as e:
             raise ConnectionError('Connection Error. Download failed: {0}'.format(e))
         else:
             return resp
