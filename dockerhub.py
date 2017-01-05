@@ -34,12 +34,23 @@ class DockerHub(object):
         self.version = version
         self.url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
 
+    def _do_requests_get(self, *args):
+        try:
+            resp = requests.get(*args, timeout=(5, 15))
+        except requests.exceptions.Timeout as e:
+            raise TimeoutError('Connection Timeout. Download failed: {0}'.format(e))
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError('Connection Error. Download failed: {0}'.format(e))
+        else:
+            return resp
+
     def _get_item(self, name, subitem=''):
         user = 'library'
         if '/' in name:
             user, name = name.split('/', 1)
 
-        resp = requests.get(os.path.join(self.api_url('repositories/{0}/{1}'.format(user, name)), subitem))
+        resp = self._do_requests_get(os.path.join(self.api_url('repositories/{0}/{1}'.format(user, name)), subitem))
+
         code = resp.status_code
         if code == 200:
             j = resp.json()
@@ -50,12 +61,13 @@ class DockerHub(object):
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
     def _iter_item(self, *args):
+
         next = None
-        resp = requests.get(*args)
+        resp = self._do_requests_get(*args)
 
         while True:
             if next:
-                resp = requests.get(next)
+                resp = self._do_requests_get(next)
 
             resp = resp.json()
 
@@ -87,5 +99,5 @@ class DockerHub(object):
         return self._get_item(name, 'dockerfile')['contents']
 
     def get_user(self, name):
-        resp = requests.get(self.api_url('users/{0}'.format(name)))
+        resp = self._do_requests_get(self.api_url('users/{0}'.format(name)))
         return resp.json()
