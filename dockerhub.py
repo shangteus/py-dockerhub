@@ -33,10 +33,11 @@ class DockerHub(object):
     def __init__(self, url=None, version='v2'):
         self.version = version
         self.url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
+        self._session = requests.Session()
 
     def _do_requests_get(self, *args):
         try:
-            resp = requests.get(*args, timeout=(5, 15))
+            resp = self._session.get(*args, timeout=(5, 15))
         except requests.exceptions.Timeout as e:
             raise TimeoutError('Connection Timeout. Download failed: {0}'.format(e))
         except requests.exceptions.RequestException as e:
@@ -61,7 +62,6 @@ class DockerHub(object):
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
     def _iter_item(self, *args):
-
         next = None
         resp = self._do_requests_get(*args)
 
