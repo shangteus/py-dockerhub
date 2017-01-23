@@ -35,6 +35,12 @@ class DockerHub(object):
         self.url = '{0}/{1}'.format(url or 'https://hub.docker.com', self.version)
         self._session = requests.Session()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def _do_requests_get(self, *args):
         try:
             resp = self._session.get(*args, timeout=(5, 15))
@@ -101,3 +107,6 @@ class DockerHub(object):
     def get_user(self, name):
         resp = self._do_requests_get(self.api_url('users/{0}'.format(name)))
         return resp.json()
+
+    def close(self):
+        self._session.close()
