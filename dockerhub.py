@@ -41,9 +41,9 @@ class DockerHub(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def _do_requests_get(self, *args):
+    def _do_requests_get(self, address, **kwargs):
         try:
-            resp = self._session.get(*args, timeout=(5, 15))
+            resp = self._session.get(address, params=kwargs, timeout=(5, 15))
         except requests.exceptions.Timeout as e:
             raise TimeoutError('Connection Timeout. Download failed: {0}'.format(e))
         except requests.exceptions.RequestException as e:
@@ -67,9 +67,9 @@ class DockerHub(object):
         else:
             raise ConnectionError('{0} download failed: {1}'.format(name, code))
 
-    def _iter_item(self, *args):
+    def _iter_item(self, address, **kwargs):
         next = None
-        resp = self._do_requests_get(*args)
+        resp = self._do_requests_get(address, **kwargs)
 
         while True:
             if next:
@@ -90,7 +90,7 @@ class DockerHub(object):
         return '{0}/{1}/'.format(self.url, path)
 
     def search(self, term):
-        return self._iter_item(self.api_url('search/repositories'), {'query': term})
+        return self._iter_item(self.api_url('search/repositories'), query=term)
 
     def get_repositories(self, user):
         return self._iter_item(self.api_url('repositories/{0}'.format(user)))
